@@ -52,19 +52,15 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
+        m = X.shape[0]
 
         def sample_mean_estimator(X: np.ndarray):
-            return np.sum(X) / X.size
+            return np.sum(X) / m
 
         def sample_variance_estimator(X: np.ndarray):
-            if self.mu_ is None:
-                raise ValueError("mu_ must be estimated first.")
-
-            sum_elems = np.ndarray((X.size,))
-            for i in range(X.size):
-                sum_elems[i] = np.power(X[i] - self.mu_, 2)
-            divisor = X.size if self.biased_ else X.size + 1
-
+            sum_elems = np.array(
+                [np.power(X[i] - self.mu_, 2) for i in range(m)])
+            divisor = m if self.biased_ else m + 1
             return (np.sum(sum_elems)) / divisor
 
         self.mu_ = sample_mean_estimator(X)
@@ -94,14 +90,13 @@ class UnivariateGaussian:
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
 
+        m = X.shape[0]
+
         def formula(x):
             exp = np.exp(-(np.power(x - self.mu_, 2) / (2 * self.var_)))
             return exp / (np.sqrt(2 * np.pi * self.var_))
 
-        pdfs = np.ndarray((X.size,))
-        for i in range(X.size):
-            pdfs[i] = formula(X[i])
-        return pdfs
+        return np.array([formula(X[i]) for i in range(m)])
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -122,11 +117,11 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        sum_elems = np.ndarray(X.size)
-        for i in range(X.size):
-            sum_elems[i] = np.power(X[i] - mu, 2)
-        return -(X.size / 2) * np.log(2 * np.pi) \
-               - (X.size / 2) * np.log(sigma) - (1/(2*sigma)) * np.sum(sum_elems)
+        m = X.shape[0]
+        exp_sum = np.sum([np.power(X[i] - mu, 2) for i in range(m)])
+        # following formula calculated in class
+        return -(m / 2) * np.log(2 * np.pi) \
+               - (m / 2) * np.log(sigma) - (exp_sum / (2 * sigma))
 
 
 class MultivariateGaussian:
@@ -173,8 +168,19 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
+        m = X.shape[0]
 
+        def sample_mean_estimator(X: np.ndarray):
+            return (np.sum(X, axis=0)) / m
+
+        def sample_covariance_estimator(X: np.ndarray):
+            # first subtract the empirical mean from each sample
+            X_centered = np.array([X[i] - self.mu_ for i in range(m)])
+            # then follow the definition of sample covariance matrix
+            return np.dot(X_centered.T, X_centered) / (m - 1)
+
+        self.mu_ = sample_mean_estimator(X)
+        self.cov_ = sample_covariance_estimator(X)
         self.fitted_ = True
         return self
 
@@ -198,7 +204,21 @@ class MultivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+
+        m = X.shape[0]
+        d = X.shape[1]
+
+        def formula(x: np.ndarray):
+            # following formula from course book - definition 1.2.5
+            exp = np.exp(
+                -(1 / 2) * np.dot(
+                    (x - self.mu_).T,
+                    np.dot(np.linalg.inv(self.cov_), (x - self.mu_))))
+            divisor = np.sqrt(
+                np.power((2 * np.pi), d) * np.linalg.det(self.cov_))
+            return exp / divisor
+
+        return np.array([formula(X[i]) for i in range(m)])
 
     @staticmethod
     def log_likelihood(mu: np.ndarray, cov: np.ndarray, X: np.ndarray) -> float:
@@ -219,4 +239,13 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+
+        m = X.shape[0]
+        d = X.shape[1]
+        # following formula calculated in Ex01 Q09
+        exp_sum = np.sum(
+            [np.dot((X[i] - mu).T,
+                    np.dot(np.linalg.inv(cov), (X[i] - mu)))
+             for i in range(m)])
+        return -(m * d / 2) * np.log(2 * np.pi) \
+               - (m / 2) * np.log(np.linalg.det(cov)) - (exp_sum / 2)
