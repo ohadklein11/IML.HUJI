@@ -240,12 +240,9 @@ class MultivariateGaussian:
             log-likelihood calculated
         """
 
-        m = X.shape[0]
-        d = X.shape[1]
+        m, d = X.shape[0], X.shape[1]
         # following formula calculated in Ex01 Q09
-        exp_sum = np.sum(
-            [np.dot((X[i] - mu).T,
-                    np.dot(np.linalg.inv(cov), (X[i] - mu)))
-             for i in range(m)])
+        exp_sum = np.sum((X - mu) @ np.linalg.inv(cov) * (X - mu))
         return -(m * d / 2) * np.log(2 * np.pi) \
-               - (m / 2) * np.log(np.linalg.det(cov)) - (exp_sum / 2)
+               - (m / 2) * np.log(np.linalg.det(cov)) \
+               - (exp_sum / 2)
