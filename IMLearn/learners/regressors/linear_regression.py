@@ -1,8 +1,9 @@
 from __future__ import annotations
 from typing import NoReturn
-from ...base import BaseEstimator
+from IMLearn.base import BaseEstimator
 import numpy as np
 from numpy.linalg import pinv
+from IMLearn.metrics import mean_square_error
 
 
 class LinearRegression(BaseEstimator):
@@ -33,6 +34,7 @@ class LinearRegression(BaseEstimator):
         super().__init__()
         self.include_intercept_, self.coefs_ = include_intercept, None
 
+
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
         Fit Least Squares model to given samples
@@ -49,7 +51,21 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        raise NotImplementedError()
+        # we want to set self.coefs_ = argmin_w(norm(Xw-y)**2)
+        # as seen in class, (X_dagger)@y = argmin_w(norm(Xw-y)**2)
+        # where X_dagger is the Moore-Penrose pseudo-inverse of X.
+        m = X.shape[0]
+
+        if self.include_intercept_:
+            X = np.c_[np.ones((m, 1)), X]
+
+        # calculate the economy SVD of X
+        U, S, Vt = np.linalg.svd(X, full_matrices=False)
+        # estimate w_hat by multiplying pseudo-inverse of X by y
+        X_dagger = Vt.T @ np.linalg.inv(np.diag(S)) @ U.T
+        w_hat = X_dagger @ y
+
+        self.coefs_ = w_hat
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -65,7 +81,10 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        m = X.shape[0]
+        if self.include_intercept_:
+            X = np.c_[np.ones((m, 1)), X]
+        return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -84,4 +103,6 @@ class LinearRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        raise NotImplementedError()
+        return mean_square_error(y, self._predict(X))
+
+
