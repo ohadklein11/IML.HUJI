@@ -21,13 +21,24 @@ def load_data(filename: str) -> pd.DataFrame:
     -------
     Design matrix and response vector (Temp)
     """
-    raise NotImplementedError()
+    df = pd.read_csv(filename, parse_dates=True)
+
+    # removing samples with invalid values
+    df.drop(df[df['Temp'] <= -12].index, inplace=True)
+
+    # add additional columns
+    df['DayOfYear'] = pd.to_datetime(df['Date']).dt.dayofyear
+
+    # add intercept
+    df.insert(0, 'intercept', 1, True)
+
+    return df
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of city temperature dataset
-    raise NotImplementedError()
+    data = load_data('..\\datasets\\City_Temperature.csv')
 
     # Question 2 - Exploring data for specific country
     raise NotImplementedError()

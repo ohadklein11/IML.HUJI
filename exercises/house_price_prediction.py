@@ -66,7 +66,7 @@ def load_data(filename: str):
     df['zipcode'] = df['zipcode'].astype(int)
     df = pd.get_dummies(df, prefix='zipcode', columns=['zipcode'])
 
-    # insert intercept column
+    # add intercept
     df.insert(0, 'intercept', 1, True)
 
     return df.drop('price', axis=1), df['price']
@@ -117,7 +117,9 @@ if __name__ == '__main__':
     # for which it is irrelevant to draw scatter plots.
     data_without_zip = \
         data[data.columns.drop(list(data.filter(regex='zipcode_')))]
-    feature_evaluation(data_without_zip, prices)
+    data_without_zip_and_intercept = \
+        data_without_zip[data_without_zip.columns.drop('intercept')]
+    feature_evaluation(data_without_zip_and_intercept, prices)
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(data, prices, .75)
@@ -141,12 +143,12 @@ if __name__ == '__main__':
             model.fit(np.array(data_samples), prices_samples)
             loss = model.loss(np.array(test_X), np.array(test_y))
             losses.append(loss)
-        mean_loss, var_loss = \
+        mean_loss, dev_loss = \
             np.mean(losses, axis=0), np.std(losses, axis=0)
         percentages.append(p)
         means.append(mean_loss)
-        confidence_intervals_minus.append(mean_loss - 2 * var_loss)
-        confidence_intervals_plus.append(mean_loss + 2 * var_loss)
+        confidence_intervals_minus.append(mean_loss - 2 * dev_loss)
+        confidence_intervals_plus.append(mean_loss + 2 * dev_loss)
     fig = go.Figure([go.Scatter(x=percentages, y=means, mode="markers+lines", name="Mean Prediction",
                                line=dict(dash="dash"), marker=dict(color="green", opacity=.7)),
                     go.Scatter(x=percentages,
