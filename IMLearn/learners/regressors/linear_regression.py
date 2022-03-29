@@ -54,15 +54,10 @@ class LinearRegression(BaseEstimator):
         # we want to set self.coefs_ = argmin_w(norm(Xw-y)**2)
         # as seen in class, (X_dagger)@y = argmin_w(norm(Xw-y)**2)
         # where X_dagger is the Moore-Penrose pseudo-inverse of X.
-        m = X.shape[0]
 
-        if self.include_intercept_:
-            X = np.c_[np.ones((m, 1)), X]
-
-        # calculate the economy SVD of X
-        U, S, Vt = np.linalg.svd(X, full_matrices=False)
-        # estimate w_hat by multiplying pseudo-inverse of X by y
-        X_dagger = Vt.T @ np.linalg.inv(np.diag(S)) @ U.T
+        if not self.include_intercept_:
+            X = X[1:]
+        X_dagger = pinv(X)
         w_hat = X_dagger @ y
 
         self.coefs_ = w_hat
@@ -81,9 +76,8 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        m = X.shape[0]
-        if self.include_intercept_:
-            X = np.c_[np.ones((m, 1)), X]
+        if not self.include_intercept_:
+            X = X[1:]
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
