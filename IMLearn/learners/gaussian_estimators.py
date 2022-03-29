@@ -139,12 +139,12 @@ class MultivariateGaussian:
             Initialized as false indicating current estimator instance has not been fitted.
             To be set as True in `MultivariateGaussian.fit` function.
 
-        mu_: float
-            Estimated expectation initialized as None. To be set in `MultivariateGaussian.ft`
+        mu_: ndarray of shape (n_features,)
+            Estimated expectation initialized as None. To be set in `MultivariateGaussian.fit`
             function.
 
-        cov_: float
-            Estimated covariance initialized as None. To be set in `MultivariateGaussian.ft`
+        cov_: ndarray of shape (n_features, n_features)
+            Estimated covariance initialized as None. To be set in `MultivariateGaussian.fit`
             function.
         """
         self.mu_, self.cov_ = None, None
@@ -156,12 +156,12 @@ class MultivariateGaussian:
 
         Parameters
         ----------
-        X: ndarray of shape (n_samples, )
+        X: ndarray of shape (n_samples, n_features)
             Training data
 
         Returns
         -------
-        self : returns an instance of self.
+        self : returns an instance of self
 
         Notes
         -----
@@ -190,7 +190,7 @@ class MultivariateGaussian:
 
         Parameters
         ----------
-        X: ndarray of shape (n_samples, )
+        X: ndarray of shape (n_samples, n_features)
             Samples to calculate PDF for
 
         Returns
@@ -227,25 +227,22 @@ class MultivariateGaussian:
 
         Parameters
         ----------
-        mu : float
+        mu : ndarray of shape (n_features,)
             Expectation of Gaussian
-        cov : float
+        cov : ndarray of shape (n_features, n_features)
             covariance matrix of Gaussian
-        X : ndarray of shape (n_samples, )
+        X : ndarray of shape (n_samples, n_features)
             Samples to calculate log-likelihood with
 
         Returns
         -------
         log_likelihood: float
-            log-likelihood calculated
+            log-likelihood calculated over all input data and under given parameters of Gaussian
         """
 
-        m = X.shape[0]
-        d = X.shape[1]
+        m, d = X.shape[0], X.shape[1]
         # following formula calculated in Ex01 Q09
-        exp_sum = np.sum(
-            [np.dot((X[i] - mu).T,
-                    np.dot(np.linalg.inv(cov), (X[i] - mu)))
-             for i in range(m)])
+        exp_sum = np.sum((X - mu) @ np.linalg.inv(cov) * (X - mu))
         return -(m * d / 2) * np.log(2 * np.pi) \
-               - (m / 2) * np.log(np.linalg.det(cov)) - (exp_sum / 2)
+               - (m / 2) * np.log(np.linalg.det(cov)) \
+               - (exp_sum / 2)
