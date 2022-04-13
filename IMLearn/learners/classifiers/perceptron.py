@@ -77,17 +77,15 @@ class Perceptron(BaseEstimator):
         if self.include_intercept_:
             X = np.c_[np.ones(m), X]
         d = X.shape[1]
-        w = np.zeros(d)
+        self.coefs_ = np.zeros(d)
         for _ in range(self.max_iter_):
-            new_w = w
             for i in range(m):
-                if y[i] * np.dot(w, X[i]) < 0:  # todo make sure X[i] is i'th SAMPLE
-                    new_w += y[i] * X[i]
+                if y[i] * np.dot(self.coefs_, X[i]) <= 0:
                     self.callback_(self, X[i], y[i])
-            if new_w == w:
+                    self.coefs_ += y[i] * X[i]
+                    break
+            else:
                 break
-            w = new_w
-        self.coefs_ = w
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -106,7 +104,6 @@ class Perceptron(BaseEstimator):
         m = X.shape[0]
         if self.include_intercept_:
             X = np.c_[np.ones(m), X]
-        # todo check what to do if np.dot == 0
         return np.array([-1 if np.dot(self.coefs_, X[i]) < 0 else 1 for i in range(m)])
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -127,4 +124,4 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        return misclassification_error(y, self.predict(X))
+        return misclassification_error(y, self._predict(X))
