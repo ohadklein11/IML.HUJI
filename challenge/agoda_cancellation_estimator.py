@@ -1,7 +1,11 @@
 from __future__ import annotations
 from typing import NoReturn
+
+import sklearn.metrics as mtr
+
 from IMLearn.base import BaseEstimator
 import numpy as np
+from sklearn.tree import DecisionTreeClassifier
 
 
 class AgodaCancellationEstimator(BaseEstimator):
@@ -22,6 +26,7 @@ class AgodaCancellationEstimator(BaseEstimator):
 
         """
         super().__init__()
+        self.classifier_ = DecisionTreeClassifier()
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -39,7 +44,7 @@ class AgodaCancellationEstimator(BaseEstimator):
         -----
 
         """
-        pass
+        self.classifier_.fit(X, y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -55,7 +60,7 @@ class AgodaCancellationEstimator(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return np.zeros(X.shape[0])
+        return self.classifier_.predict(X)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -74,4 +79,5 @@ class AgodaCancellationEstimator(BaseEstimator):
         loss : float
             Performance under loss function
         """
-        pass
+        # using MSE probably temporary
+        return mtr.mean_squared_error(y, self._predict(X))
