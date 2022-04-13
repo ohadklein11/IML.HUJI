@@ -149,8 +149,9 @@ if __name__ == '__main__':
         means.append(mean_loss)
         confidence_intervals_minus.append(mean_loss - 2 * dev_loss)
         confidence_intervals_plus.append(mean_loss + 2 * dev_loss)
-    fig = go.Figure([go.Scatter(x=percentages, y=means, mode="markers+lines", name="Mean Prediction",
-                               line=dict(dash="dash"), marker=dict(color="green", opacity=.7)),
+    fig = go.Figure([go.Scatter(x=percentages, y=means, mode="markers+lines",
+                                name="Mean Prediction", line=dict(dash="dash"),
+                                marker=dict(color="green", opacity=.7)),
                     go.Scatter(x=percentages,
                                y=confidence_intervals_minus,
                                fill=None, mode="lines",
@@ -162,7 +163,7 @@ if __name__ == '__main__':
     fig.update_layout(
         title="(Q4) Loss over test set of Linear Regression house price model,"
               " by samples percent from training set.",
-        xaxis_title="loss over test set",
-        yaxis_title="samples percent from training set"
+        xaxis_title="samples percent from training set",
+        yaxis_title="loss over test set"
     )
     fig.show()
