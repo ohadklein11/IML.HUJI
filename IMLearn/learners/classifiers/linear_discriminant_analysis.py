@@ -48,18 +48,40 @@ class LDA(BaseEstimator):
         self.mu_ = [[[] for _ in range(d)] for _ in range(K)]
         # set for each class its
         class_indexes = {}
-        for i, k in enumerate(self.classes_):
-            class_indexes[k] = i
+        for k, cls in enumerate(self.classes_):
+            class_indexes[cls] = k
 
         for sample in np.c_[X, y]:
-            k = sample[-1]
-            i = class_indexes[k]
+            cls = sample[-1]
+            k = class_indexes[cls]
             for j, feature in enumerate(sample[:-1]):
-                self.mu_[i][j].append(feature)
+                self.mu_[k][j].append(feature)
 
-        for i in range(K):
+        for k in range(K):
             for j in range(d):
-                self.mu_[i][j] = np.mean(np.array(self.mu_[i][j]))
+                self.mu_[k][j] = np.mean(np.array(self.mu_[k][j]))
+
+    def _set_cov(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
+        """
+        Helper func - sets the self.cov_ attribute.
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Input data to fit an estimator for
+
+        y : ndarray of shape (n_samples, )
+            Responses of input data to fit to
+        """
+        K, m, d = self.classes_.size, X.shape[0], X.shape[1]
+
+        class_indexes = {}
+        for k, cls in enumerate(self.classes_):
+            class_indexes[cls] = k
+
+        self.cov_ = (1 / m) * np.sum(
+            [np.outer((X[i] - self.mu_[class_indexes[y[i]]]),
+                      (X[i] - self.mu_[class_indexes[y[i]]]))
+             for i in range(m)], axis=0)
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -78,11 +100,11 @@ class LDA(BaseEstimator):
         self.classes_, class_counts = np.unique(y, return_counts=True)
         K, m, d = self.classes_.size, X.shape[0], X.shape[1]
         self._set_mu(X, y)
-        self.cov_ = np.cov(X.T)
+        self._set_cov(X, y)
         self._cov_inv = np.linalg.inv(self.cov_)
         self.pi_ = np.ndarray(K)
-        for i, k in enumerate(self.classes_):
-            self.pi_[i] = class_counts[i] / m
+        for k, cls in enumerate(self.classes_):
+            self.pi_[k] = class_counts[k] / m
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -100,10 +122,10 @@ class LDA(BaseEstimator):
         """
         K, m = self.classes_.size, X.shape[0]
         y_cands = np.ndarray((K, m))
-        for i, k in enumerate(self.classes_):
-            ak = self._cov_inv @ self.mu_[i]
-            bk = np.log(self.pi_[i]) - (1 / 2) * float(self.mu_[i] @ ak)
-            y_cands[i] = ak @ X.T + bk
+        for k, cls in enumerate(self.classes_):
+            ak = self._cov_inv @ self.mu_[k]
+            bk = np.log(self.pi_[k]) - (1 / 2) * float(self.mu_[k] @ ak)
+            y_cands[k] = ak @ X.T + bk
         return self.classes_[np.argmax(y_cands, axis=0)]
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
@@ -124,18 +146,18 @@ class LDA(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
-        def likelihood_func(xi, yi_idx):
-            xi_mu_yi = xi - self.mu_[yi_idx]
+        def likelihood_func(i, k):
+            xi_mu_yi = X[i] - self.mu_[k]
             normal = (1 / np.sqrt(((2 * np.pi) ** d) * np.linalg.det(self.cov_))) * \
                      np.exp(-(1 / 2) * xi_mu_yi.T @ self._cov_inv @ xi_mu_yi)
-            return normal * self.pi_[yi_idx]
+            return normal * self.pi_[k]
 
         K, m, d = self.classes_.size, X.shape[0], X.shape[1]
         likelihoods = np.ndarray((m, K))
 
         for i, sample in enumerate(X):
-            for j, k in enumerate(self.classes_):
-                likelihoods[i][j] = likelihood_func(sample, j)
+            for k, cls in enumerate(self.classes_):
+                likelihoods[i][k] = likelihood_func(i, k)
         return likelihoods
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:

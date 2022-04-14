@@ -43,22 +43,22 @@ class GaussianNaiveBayes(BaseEstimator):
         K, d = self.classes_.size, X.shape[1]
         self.mu_ = [[[] for _ in range(d)] for _ in range(K)]
         self.vars_ = [[[] for _ in range(d)] for _ in range(K)]
-        # set for each class its
+
         class_indexes = {}
-        for i, k in enumerate(self.classes_):
-            class_indexes[k] = i
+        for k, cls in enumerate(self.classes_):
+            class_indexes[cls] = k
 
         for sample in np.c_[X, y]:
-            k = sample[-1]
-            i = class_indexes[k]
+            cls = sample[-1]
+            k = class_indexes[cls]
             for j, feature in enumerate(sample[:-1]):
-                self.mu_[i][j].append(feature)
-                self.vars_[i][j].append(feature)
+                self.mu_[k][j].append(feature)
+                self.vars_[k][j].append(feature)
 
-        for i in range(K):
+        for k in range(K):
             for j in range(d):
-                self.mu_[i][j] = np.mean(np.array(self.mu_[i][j]))
-                self.vars_[i][j] = np.var(np.array(self.vars_[i][j]))
+                self.mu_[k][j] = np.mean(np.array(self.mu_[k][j]))
+                self.vars_[k][j] = np.var(np.array(self.vars_[k][j]))
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -76,8 +76,8 @@ class GaussianNaiveBayes(BaseEstimator):
         K, m, d = self.classes_.size, X.shape[0], X.shape[1]
         self._set_mu_and_var(X, y)
         self.pi_ = np.ndarray(K)
-        for i, k in enumerate(self.classes_):
-            self.pi_[i] = class_counts[i] / m
+        for k, cls in enumerate(self.classes_):
+            self.pi_[k] = class_counts[k] / m
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """

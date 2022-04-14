@@ -91,7 +91,8 @@ def compare_gaussian_classifiers():
     """
     Fit both Gaussian Naive Bayes and LDA classifiers on both gaussians1 and gaussians2 datasets
     """
-    for f in ["..\\datasets\\gaussian1.npy", "..\\datasets\\gaussian2.npy"]:
+    for n, f in [('gaussian1', "..\\datasets\\gaussian1.npy"),
+                 ('gaussian2', "..\\datasets\\gaussian2.npy")]:
         # Load dataset
         X, y = load_dataset(f)
 
@@ -107,9 +108,15 @@ def compare_gaussian_classifiers():
         from IMLearn.metrics import accuracy
         symbols = np.array(["cross", "circle"])
         fig = make_subplots(rows=1, cols=2,
-                            subplot_titles=(f'Gaussian Naive Bayes<br>Accuracy = {accuracy(y, y_gnb)}',
-                                            f'LDA predictions<br>Accuracy = {accuracy(y, y_lda)}'),
+                            subplot_titles=(
+                                f'Gaussian Naive Bayes predictions'
+                                f'<br>Accuracy = {accuracy(y, y_gnb)}',
+                                f'LDA predictions'
+                                f'<br>Accuracy = {accuracy(y, y_lda)}'),
                             horizontal_spacing=0.05)
+        fig.update_layout(
+            title=n
+        )
 
         # Add traces for data-points setting symbols and colors
         for i, y_pred in enumerate((y_gnb, y_lda)):
@@ -152,5 +159,5 @@ def compare_gaussian_classifiers():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    #run_perceptron()
+    run_perceptron()
     compare_gaussian_classifiers()

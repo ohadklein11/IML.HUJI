@@ -84,7 +84,7 @@ class Perceptron(BaseEstimator):
                     self.callback_(self, X[i], y[i])
                     self.coefs_ += y[i] * X[i]
                     break
-            else:
+            else:  # no changes made
                 break
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
