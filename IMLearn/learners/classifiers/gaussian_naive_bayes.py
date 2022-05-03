@@ -75,9 +75,7 @@ class GaussianNaiveBayes(BaseEstimator):
         self.classes_, class_counts = np.unique(y, return_counts=True)
         K, m, d = self.classes_.size, X.shape[0], X.shape[1]
         self._set_mu_and_var(X, y)
-        self.pi_ = np.ndarray(K)
-        for k, cls in enumerate(self.classes_):
-            self.pi_[k] = class_counts[k] / m
+        self.pi_ = np.array([class_counts[k] / m for k, cls in enumerate(self.classes_)])
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
