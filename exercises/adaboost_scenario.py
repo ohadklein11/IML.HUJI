@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Tuple
-from IMLearn.learners.metalearners.adaboost import AdaBoost
+from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
 import plotly.graph_objects as go
@@ -38,11 +38,30 @@ def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
     return X, y
 
 
-def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=500):
+def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=500, test_size=200):  # todo train 5000 test 500
     (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
 
-    # Question 1: Train- and test errors of AdaBoost in noiseless case
-    raise NotImplementedError()
+    # Question 1: Train and test errors of AdaBoost in noiseless case
+    def default_callback():
+        return DecisionStump()
+
+    model = AdaBoost(default_callback, n_learners).fit(train_X, train_y)
+    model.fit(train_X, train_y)
+    num_learners = np.arange(start=1, stop=n_learners+1)
+    train_errors = []
+    test_errors = []
+    for t in num_learners:
+        train_errors.append(model.partial_loss(train_X, train_y, t))
+        test_errors.append(model.partial_loss(test_X, test_y, t))
+    fig = go.Figure([
+            go.Scatter(x=num_learners, y=train_errors,
+                       mode='markers + lines', name=r'$Train samples$'),
+            go.Scatter(x=num_learners, y=test_errors,
+                       mode='markers + lines', name=r'$Test samples^2$')])
+    fig.update_layout(title=rf"$\text{{(Q1) Train and test errors of AdaBoost in noiseless case }}$",
+                      xaxis=dict(title="Number of learners used"),
+                      yaxis=dict(title="loss"))
+    fig.show()
 
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
@@ -58,4 +77,15 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
 
 if __name__ == '__main__':
     np.random.seed(0)
-    raise NotImplementedError()
+    fit_and_evaluate_adaboost(0)
+    # X = np.array([[1, 5],
+    #               [1, 7],
+    #               [2, 3],
+    #               [2, 7],
+    #               [3, 7]])
+    # y = np.array([1, -1, 1, -1, -1])
+    # model = DecisionStump().fit(X, y)
+    # print("threshold: ", model.threshold_)
+    # print("j: ", model.j_)
+    # print("sign: ", model.sign_)
+    # print(model.predict(np.array([[1, 3]])))

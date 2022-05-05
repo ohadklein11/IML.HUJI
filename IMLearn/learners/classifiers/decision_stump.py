@@ -41,20 +41,17 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
+        # todo error is not here
         m, d = X.shape[0], X.shape[1]
         min_err = 1
-        for feature in range(d):
-            X_indexes = X.argsort(axis=feature)
-            sorted_X = X[X_indexes[::-1]]  # todo check if sorted properly
-            sorted_y = y[X_indexes[::-1]]
-            for val in [1, -1]:
-                threshold, threshold_err = \
-                    self._find_threshold(sorted_X.T[feature], sorted_y, val)
-                if threshold_err < min_err:
-                    self.threshold_ = threshold
-                    self.j_ = feature
-                    self.sign_ = val
-                    min_err = threshold_err
+        for val, feature in product([1, -1], range(d)):
+            threshold, threshold_err = \
+                self._find_threshold(X[:, feature], y, val)
+            if threshold_err < min_err:
+                self.threshold_ = threshold
+                self.j_ = feature
+                self.sign_ = val
+                min_err = threshold_err
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -75,10 +72,10 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        m, d = X.shape[0], X.shape[1]
+        m = X.shape[0]
         return np.array(
             [self.sign_ if X[i][self.j_] >= self.threshold_ else -self.sign_
-             for i in range(m)])  # todo check
+             for i in range(m)])
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -110,26 +107,27 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        def gini(samples_y: np.ndarray):
-            total = samples_y.size
-            pos = samples_y.sum(
-                [1 if samples_y[k] == 1 else 0 for k in range(samples_y.size)])
-            neg = samples_y.sum(
-                [1 if samples_y[k] == -1 else 0 for k in range(samples_y.size)])
-            return 1 - (pos/total)**2 - (neg/total)**2
-
+        # todo error is not here.
         thr, thr_err = 0, 1
         m = values.shape[0]
-        min_gini = 1
-        for i in range(m):
-            left_gini = gini(labels[:i])
-            right_gini = gini(labels[i:])
-            total_gini = (i / m) * left_gini + ((m - i) / m) * right_gini
-            if total_gini < min_gini:
-                thr = values[i]
-                true_vals = np.array([-sign if j < i else sign for j in range(m)])
-                thr_err = misclassification_error(true_vals, labels)
-                min_gini = total_gini
+        values_indexes = values.argsort(axis=0)
+        values = values[values_indexes]
+        labels = labels[values_indexes]
+        i, prev_i = 0, 0
+        pred_vals = np.array([sign] * m)
+        while i < m:
+            err = sum(np.abs(labels[pred_vals != np.sign(labels)])) / m
+            if err < thr_err:
+                thr = (values[i] + values[prev_i]) / 2
+                thr_err = err
+            # inc i to next value
+            prev_i = i
+            pred_vals[i] = -sign
+            i += 1
+            while i < m and values[i] == values[i-1]:
+                # avoid multiple checks for same value
+                pred_vals[i] = -sign
+                i += 1
         return thr, thr_err
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -149,4 +147,4 @@ class DecisionStump(BaseEstimator):
         loss : float
             Performance under misclassification loss function
         """
-        return misclassification_error(y, self.predict(X))
+        return misclassification_error(y, self._predict(X))
