@@ -111,9 +111,6 @@ class DecisionStump(BaseEstimator):
         labels = labels[values_indexes]
         values = np.append(values, values[-1] + 1)
         sign_losses = np.sum(np.abs(labels[sign != np.sign(labels)]))
-        # for each value, mark up to that value (including) as -sign.
-        # add to the loss all the labels that are sign, and subtract all the
-        # labels that are -sign.
         losses = np.append(sign_losses, np.cumsum(sign * labels) + sign_losses)
         min_loss = np.argmin(losses)
         thr, thr_err = values[min_loss], losses[min_loss]
