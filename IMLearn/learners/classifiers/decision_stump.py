@@ -41,7 +41,6 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        # todo error is not here
         m, d = X.shape[0], X.shape[1]
         min_err = 1
         for val, feature in product([1, -1], range(d)):
@@ -107,27 +106,17 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        # todo error is not here.
-        thr, thr_err = 0, 1
-        m = values.shape[0]
-        values_indexes = values.argsort(axis=0)
+        values_indexes = np.argsort(values)
         values = values[values_indexes]
         labels = labels[values_indexes]
-        i, prev_i = 0, 0
-        pred_vals = np.array([sign] * m)
-        while i < m:
-            err = sum(np.abs(labels[pred_vals != np.sign(labels)])) / m
-            if err < thr_err:
-                thr = (values[i] + values[prev_i]) / 2
-                thr_err = err
-            # inc i to next value
-            prev_i = i
-            pred_vals[i] = -sign
-            i += 1
-            while i < m and values[i] == values[i-1]:
-                # avoid multiple checks for same value
-                pred_vals[i] = -sign
-                i += 1
+        values = np.append(values, values[-1] + 1)
+        sign_losses = np.sum(np.abs(labels[sign != np.sign(labels)]))
+        # for each value, mark up to that value (including) as -sign.
+        # add to the loss all the labels that are sign, and subtract all the
+        # labels that are -sign.
+        losses = np.append(sign_losses, np.cumsum(sign * labels) + sign_losses)
+        min_loss = np.argmin(losses)
+        thr, thr_err = values[min_loss], losses[min_loss]
         return thr, thr_err
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:

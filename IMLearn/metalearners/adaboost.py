@@ -50,19 +50,15 @@ class AdaBoost(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        # todo error is not here.
         m, d = X.shape[0], X.shape[1]
         self.models_ = np.empty((self.iterations_,), dtype=BaseEstimator)
-        self.weights_ = np.empty((self.iterations_,))
-        self.D_ = np.array([1/m] * m)
-        weight_func = lambda x: 0.5 * np.log(1/x - 1)
+        self.weights_ = np.zeros(m)
+        self.D_ = np.array([1 / m] * m)
+        weight_func = lambda x: 0.5 * np.log(1 / x - 1)
 
         for t in range(self.iterations_):
-            random_indices = np.random.choice(a=np.arange(m), size=m, p=self.D_)
-            sample_X = X[random_indices]
-            sample_y = y[random_indices]
-            self.models_[t] = self.wl_().fit(sample_X, sample_y)
-            predictions = self.models_[t].predict(sample_X)
+            self.models_[t] = self.wl_().fit(X, self.D_ * y)
+            predictions = self.models_[t].predict(X)
             epsilon = np.sum((np.abs(predictions - y) / 2) * self.D_)
             self.weights_[t] = weight_func(epsilon)
             self.D_ *= np.exp(-predictions * (self.weights_[t] * y))
