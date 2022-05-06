@@ -43,7 +43,14 @@ class DecisionStump(BaseEstimator):
         """
         m, d = X.shape[0], X.shape[1]
         min_err = 1
-       
+        for val, feature in product([1, -1], range(d)):
+            threshold, threshold_err = \
+                self._find_threshold(X[:, feature], y, val)
+            if threshold_err < min_err:
+                self.threshold_ = threshold
+                self.j_ = feature
+                self.sign_ = val
+                min_err = threshold_err
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
