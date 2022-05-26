@@ -55,8 +55,8 @@ class LinearRegression(BaseEstimator):
         # as seen in class, (X_dagger)@y = argmin_w(norm(Xw-y)**2)
         # where X_dagger is the Moore-Penrose pseudo-inverse of X.
 
-        if not self.include_intercept_:
-            X = X[1:]
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
         X_dagger = pinv(X)
         w_hat = X_dagger @ y
 
@@ -76,8 +76,8 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        if not self.include_intercept_:
-            X = X[1:]
+        if self.include_intercept_:
+            X = np.c_[np.ones(len(X)), X]
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
