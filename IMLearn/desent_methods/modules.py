@@ -33,7 +33,9 @@ class L2(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        norm_ord = 2
+        output = np.linalg.norm(self.weights, ord=norm_ord)
+        return output
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -49,7 +51,10 @@ class L2(BaseModule):
         output: ndarray of shape (n_in,)
             L2 derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
+        # note that since f(w)=||w||^2_2
+        # then f'(w)=2*||w||_2
+        output = 2 * self.weights
+        return output
 
 
 class L1(BaseModule):
@@ -78,7 +83,9 @@ class L1(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        norm_ord = 1
+        output = np.linalg.norm(self.weights, ord=norm_ord)
+        return output
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -94,7 +101,10 @@ class L1(BaseModule):
         output: ndarray of shape (n_in,)
             L1 derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
+        # note that since f(w)=sum(w)
+        # then f'(w)=sign(w)
+        output = np.sign(self.weights)
+        return output
 
 
 class LogisticModule(BaseModule):
